@@ -69,27 +69,27 @@ jobs:
 
           Write-Host "Zippy patched successfully."
 
-            - name: Patch Abseil for MSVC
-              shell: pwsh
-              run: |
-                $file = "abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time_detail.h"
-      
-                if (-not (Test-Path $file)) {
-                  Write-Error "civil_time_detail.h was not found at $file"
-                  exit 1
-                }
-      
-                $content = Get-Content $file -Raw
-      
-                if ($content -notmatch '#undef max') {
-                  $pattern = '(#include "absl/base/config\.h"\r?\n)'
-                  $replacement = '$1' + "`r`n" + '#ifdef max' + "`r`n" + '#undef max' + "`r`n" + '#endif' + "`r`n" + '#ifdef min' + "`r`n" + '#undef min' + "`r`n" + '#endif' + "`r`n"
-                  $content = $content -replace $pattern, $replacement
-                }
-      
-                Set-Content -Path $file -Value $content -NoNewline
-      
-                Write-Host "Abseil MSVC compatibility patch applied."
+      - name: Patch Abseil for MSVC
+        shell: pwsh
+        run: |
+          $file = "abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time_detail.h"
+
+          if (-not (Test-Path $file)) {
+            Write-Error "civil_time_detail.h was not found at $file"
+            exit 1
+          }
+
+          $content = Get-Content $file -Raw
+
+          if ($content -notmatch '#undef max') {
+            $pattern = '(#include "absl/base/config\.h"\r?\n)'
+            $replacement = '$1' + "`r`n" + '#ifdef max' + "`r`n" + '#undef max' + "`r`n" + '#endif' + "`r`n" + '#ifdef min' + "`r`n" + '#undef min' + "`r`n" + '#endif' + "`r`n"
+            $content = $content -replace $pattern, $replacement
+          }
+
+          Set-Content -Path $file -Value $content -NoNewline
+
+          Write-Host "Abseil MSVC compatibility patch applied."
 
       - name: Configure CMake
         run: |
