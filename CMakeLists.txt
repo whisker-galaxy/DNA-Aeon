@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.16.3)
 project(arithmetic_modulator_error_correction)
+
+if(MSVC)
+    add_compile_definitions(NOMINMAX)
+endif()
+
 set(ABSL_PROPAGATE_CXX_STD ON)
 set(BUILD_TESTING OFF)
 set(BUILD_TESTING_STATIC OFF)
