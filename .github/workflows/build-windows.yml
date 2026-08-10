@@ -59,15 +59,15 @@ jobs:
 
           $content = Get-Content $file -Raw
 
-          if ($content -notmatch '#include <direct\.h>') {
-            $pattern = '(#define Zippy_ZIPARCHIVE_HPP\r?\n)'
-            $replacement = '$1' + "`r`n" + '#ifdef _WIN32' + "`r`n" + '#include <direct.h>' + "`r`n" + '#else' + "`r`n" + '#include <sys/stat.h>' + "`r`n" + '#endif' + "`r`n"
-            $content = $content -replace $pattern, $replacement
+          $content = $content -replace '(?m)^#include <direct\.h>\r?\n', ''
+
+          if ($content -notmatch '#include <sys/stat\.h>') {
+            $content = $content -replace '(#include <[^>]+>\r?\n)', '$1#include <sys/stat.h>`r`n', 1
           }
 
           Set-Content -Path $file -Value $content -NoNewline
 
-          Write-Host "Zippy patched successfully."
+          Write-Host "Zippy Windows header patch applied."
 
       - name: Patch Abseil for MSVC
         shell: pwsh
