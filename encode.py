@@ -3,6 +3,7 @@ import argparse
 import pathlib
 import json
 import os
+import sys
 
 
 def header_crc_mapper(header_crc_conf_entry, header_bool):
@@ -29,9 +30,36 @@ def encode_norec_for_ac(config_data, current_path):
     error_detection = config_data["NOREC4DNA"]["error_detection"]
     header_crc_str = "" if not header_crc_mapper(config_data["NOREC4DNA"]["header_crc_length"], config_data["NOREC4DNA"]["insert_header"]) else " --header_crc_str " + header_crc_mapper(config_data["NOREC4DNA"]["header_crc_length"], config_data["NOREC4DNA"]["insert_header"]) + "" 
     filename = input_file.split("/")[-1]
-    py_command = ("{cpath}/NOREC4DNA/venv/bin/python3 {cpath}/NOREC4DNA/demo_raptor_encode.py --chunk_size {chunk_size_str} --error_correction {err_det} --save_as_zip {file}{ins_header}{crc_str} --overhead {redundancy}".format(
-        cpath=current_path, chunk_size_str=str(chunk_size), file=input_file, redundancy=packet_redundancy, ins_header=header, err_det=error_detection, crc_str=header_crc_str))
-    process = subprocess.Popen(py_command.split(), stdout=subprocess.PIPE)
+
+    if os.name == "nt":
+    norec_python = current_path / "NOREC4DNA" / "venv" / "Scripts" / "python.exe"
+    else:
+        norec_python = current_path / "NOREC4DNA" / "venv" / "bin" / "python3"
+    
+    py_command = [
+        str(norec_python),
+        str(current_path / "NOREC4DNA" / "demo_raptor_encode.py"),
+        "--chunk_size", str(chunk_size),
+        "--error_correction", error_detection,
+        "--save_as_zip", input_file,
+    ]
+    
+    if config_data["NOREC4DNA"]["insert_header"]:
+        py_command.append("--insert_header")
+    
+    if header_crc_str:
+        py_command.extend(header_crc_str.strip().split())
+    
+    py_command.extend([
+        "--overhead", str(packet_redundancy)
+    ])
+    
+    process = subprocess.Popen(
+        py_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    
     output, error = process.communicate()
     norec_config = output.split()[-1].decode()
     # print("\n" + NOREC4DNA_BASE_PATH + "/" + filename + ".ini\n")
@@ -58,9 +86,24 @@ def encode_ac(current_path, config):
     with open("intermediate_config.json", "w") as inter:
         json.dump(config, inter)
     # Inner encoder command
-    py_command = ("{cpath}/arithmetic_modulator_error_correction -e {cpath}/{config_file}".format(
-        cpath=current_path, config_file="intermediate_config.json"))
-    process = subprocess.Popen(py_command.split(), stdout=subprocess.PIPE)
+
+    if os.name == "nt":
+        aeon_executable = current_path / "build" / "Release" / "arithmetic_modulator_error_correction.exe"
+    else:
+        aeon_executable = current_path / "arithmetic_modulator_error_correction"
+    
+    py_command = [
+        str(aeon_executable),
+        "-e",
+        str(current_path / "intermediate_config.json")
+    ]
+    
+    process = subprocess.Popen(
+        py_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    
     output, error = process.communicate()
     os.remove("intermediate_config.json")
     if not config["encode"]["keep_intermediary"]:
