@@ -31,10 +31,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
 
-      - name: Install Python dependencies
+      - name: Check Python and pip platform
+        shell: pwsh
         run: |
-          python -m pip install wheel
-          python -m pip install -r NOREC_requirements.txt
+          python -c "import platform, sys, sysconfig; print('Python:', sys.version); print('Machine:', platform.machine()); print('Platform:', sysconfig.get_platform())"
+          python -m pip debug --verbose
 
       - name: Create NOREC4DNA virtual environment
         run: |
