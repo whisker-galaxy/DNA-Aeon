@@ -1,6 +1,6 @@
 brotli
-numpy~=1.23.3
-scipy>=1.11,<1.12
+numpy==2.2.6
+scipy==1.17.0
 requests==2.27.1
 bitarray==2.5.1
 reedsolo==0.3
