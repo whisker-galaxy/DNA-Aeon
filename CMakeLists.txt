@@ -13,12 +13,28 @@ set(CREATE_DOCS OFF)
 add_subdirectory(abseil-cpp)
 add_subdirectory(Zippy)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_DEBUG_MACRO -ggdb3")
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DENABLE_DEBUG_MACRO")
+else()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_DEBUG_MACRO -ggdb3")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_CXX_STANDARD 11)
 #-O4 -ffast-math
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ansi -O4 -ffast-math -march=native")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -ansi -O4 -ffast-math -march=native")
+
+if(MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ansi -O4 -ffast-math -march=native")
+endif()
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -ansi -O4 -ffast-math -march=native")
+endif()
+
 #  -O4 -ffast-math -march=native -Q --help=target
 # -pedantic
 include_directories(cpp)
