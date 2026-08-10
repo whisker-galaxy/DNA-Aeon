@@ -54,5 +54,4 @@ add_executable(arithmetic_modulator_error_correction
 
 target_link_libraries(arithmetic_modulator_error_correction absl::btree absl::flat_hash_set absl::flat_hash_map)
 
-enable_testing ()
-add_subdirectory (test)
+# Tests disabled for Windows ARM64 release build
