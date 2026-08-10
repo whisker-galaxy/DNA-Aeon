@@ -47,6 +47,38 @@ jobs:
           NOREC4DNA\venv\Scripts\python.exe -m pip install wheel
           NOREC4DNA\venv\Scripts\python.exe -m pip install -r NOREC_requirements.txt
 
+      - name: Patch Zippy for Windows
+        shell: pwsh
+        run: |
+          $file = "Zippy/library/Zippy/ZipArchive.hpp"
+
+          if (-not (Test-Path $file)) {
+              Write-Error "ZipArchive.hpp was not found at $file"
+              exit 1
+          }
+
+          $content = Get-Content $file -Raw
+
+          $includeBlock = @"
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
+
+"@
+
+          if ($content -notmatch "#include <direct\.h>") {
+              $content = $content -replace `
+                  '(#define Zippy_ZIPARCHIVE_HPP\r?\n)', `
+                  "`$1`r`n$includeBlock"
+          }
+
+          Set-Content -Path $file -Value $content -NoNewline
+
+          Write-Host "Patched $file"
+          Get-Content $file -TotalCount 55
+
       - name: Configure CMake
         run: |
           cmake -S . -B build -A ARM64
