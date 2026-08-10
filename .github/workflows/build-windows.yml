@@ -81,15 +81,19 @@ jobs:
 
           $content = Get-Content $file -Raw
 
-          if ($content -notmatch '#undef max') {
-            $pattern = '(#include "absl/base/config\.h"\r?\n)'
-            $replacement = '$1' + "`r`n" + '#ifdef max' + "`r`n" + '#undef max' + "`r`n" + '#endif' + "`r`n" + '#ifdef min' + "`r`n" + '#undef min' + "`r`n" + '#endif' + "`r`n"
-            $content = $content -replace $pattern, $replacement
-          }
+          $content = $content.Replace(
+            "static CONSTEXPR_F civil_time(max)()",
+            "static CONSTEXPR_F auto (max)() -> civil_time"
+          )
+
+          $content = $content.Replace(
+            "static CONSTEXPR_F civil_time(min)()",
+            "static CONSTEXPR_F auto (min)() -> civil_time"
+          )
 
           Set-Content -Path $file -Value $content -NoNewline
 
-          Write-Host "Abseil MSVC compatibility patch applied."
+          Write-Host "Abseil civil_time max/min declarations patched."
 
       - name: Configure CMake
         run: |
