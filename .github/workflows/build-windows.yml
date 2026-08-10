@@ -59,11 +59,8 @@ jobs:
 
           $content = Get-Content $file -Raw
 
+          # Remove direct.h if the previous patch inserted it.
           $content = $content -replace '(?m)^#include <direct\.h>\r?\n', ''
-
-          if ($content -notmatch '#include <sys/stat\.h>') {
-            $content = $content -replace '(#include <[^>]+>\r?\n)', '$1#include <sys/stat.h>`r`n', 1
-          }
 
           Set-Content -Path $file -Value $content -NoNewline
 
