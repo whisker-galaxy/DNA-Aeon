@@ -9,8 +9,8 @@ pycryptodomex==3.14.1
 bitstring==3.1.9
 cycler==0.11.0
 setuptools==62.3.1
-pybloomfiltermmap3==0.5.3 # comment for windows
-#pybloom3==0.0.3 # this is only needed for windows
+# pybloomfiltermmap3==0.5.3
+pybloom3==0.0.3
 pandas
 progressbar2==4.0.0
 crcmod~=1.7
