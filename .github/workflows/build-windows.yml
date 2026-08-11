@@ -47,6 +47,26 @@ jobs:
           NOREC4DNA\venv\Scripts\python.exe -m pip install wheel
           NOREC4DNA\venv\Scripts\python.exe -m pip install -r NOREC_requirements.txt
 
+      - name: Patch Zippy submodule for Windows
+        shell: pwsh
+        run: |
+          $file = "Zippy/library/Zippy/ZipArchive.hpp"
+
+          if (-not (Test-Path $file)) {
+            Write-Error "ZipArchive.hpp was not found at $file"
+            exit 1
+          }
+
+          $content = Get-Content -Path $file -Raw
+
+          if ($content -notmatch '#include <sys/stat\.h>') {
+            $content = '#include <sys/stat.h>' + "`r`n" + $content
+          }
+
+          Set-Content -Path $file -Value $content -NoNewline
+
+          Write-Host "Zippy patched with sys/stat.h"
+
       
 
       - name: Patch Abseil for MSVC
