@@ -159,6 +159,95 @@ jobs:
 
           Write-Host "main.cpp MSVC ARM64 compatibility patch completed."
 
+      - name: Patch main.cpp for Windows ARM64
+        shell: pwsh
+        run: |
+          $file = "cpp/src/main.cpp"
+          $content = Get-Content $file -Raw
+
+          $content = $content.Replace(
+            'absl::synchronization_internal::ThreadPool pool(static_cast<int>(min(static_cast<unsigned long>(config["general"]["threads"]),ents.size())));',
+            @'
+          int threadCount = std::min(
+              static_cast<int>(config["general"]["threads"]),
+              static_cast<int>(ents.size())
+          );
+          absl::synchronization_internal::ThreadPool pool(threadCount);
+          '@
+          )
+
+          $content = $content.Replace(
+            'ifstream inStream(config["encode"]["input"], ios::binary);',
+            @'
+          ifstream inStream(
+              static_cast<string>(config["encode"]["input"]),
+              ios::binary
+          );
+          '@
+          )
+
+          $content = $content.Replace(
+            'ofstream out(config["encode"]["output"], ios::binary);',
+            @'
+          ofstream out(
+              static_cast<string>(config["encode"]["output"]),
+              ios::binary
+          );
+          '@
+          )
+
+          $content = $content.Replace(
+            'ifstream outin(config["encode"]["output"]);',
+            @'
+          ifstream outin(
+              static_cast<string>(config["encode"]["output"])
+          );
+          '@
+          )
+
+          $content = $content.Replace(
+            'absl::synchronization_internal::ThreadPool pool(config["general"]["threads"]);',
+            @'
+          absl::synchronization_internal::ThreadPool pool(
+              static_cast<int>(config["general"]["threads"])
+          );
+          '@
+          )
+
+          $content = $content.Replace(
+            'ifstream iStream(config["decode"]["input"]);',
+            @'
+          ifstream iStream(
+              static_cast<string>(config["decode"]["input"])
+          );
+          '@
+          )
+
+          $content = $content.Replace(
+            'ofstream out(config["decode"]["output"], ios::out | ios::binary);',
+            @'
+          ofstream out(
+              static_cast<string>(config["decode"]["output"]),
+              ios::out | ios::binary
+          );
+          '@
+          )
+
+          $content = $content.Replace(
+            'int size = inp.size();',
+            'size_t size = inp.size();'
+          )
+
+          Set-Content $file $content -NoNewline
+
+          Write-Host "main.cpp patched successfully."
+
+          # Show the relevant lines so the build log proves what was changed.
+          $lines = Get-Content $file
+          for ($i = 20; $i -le 35; $i++) {
+              Write-Host ("{0}: {1}" -f ($i + 1), $lines[$i])
+          }
+
       - name: Configure CMake
         run: |
           cmake -S . -B build -A ARM64
