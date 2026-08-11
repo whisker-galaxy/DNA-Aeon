@@ -59,13 +59,13 @@ jobs:
 
           $content = Get-Content -Path $file -Raw
 
-          if ($content -notmatch '#include <sys/stat\.h>') {
-            $content = '#include <sys/stat.h>' + "`r`n" + $content
+          if ($content -notmatch '#include <direct\.h>') {
+            $content = $content -replace '#include <fstream>', "#include <fstream>`r`n`r`n#ifdef _WIN32`r`n#include <direct.h>`r`n#else`r`n#include <sys/stat.h>`r`n#endif"
           }
 
           Set-Content -Path $file -Value $content -NoNewline
 
-          Write-Host "Zippy patched with sys/stat.h"
+          Write-Host "Zippy Windows directory headers patched."
 
       
 
