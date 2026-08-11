@@ -59,12 +59,24 @@ jobs:
 
           $content = Get-Content $file -Raw
 
-          # Remove direct.h if the previous patch inserted it.
-          $content = $content -replace '(?m)^#include <direct\.h>\r?\n', ''
+          # Remove all existing direct.h includes.
+          $content = $content -replace '(?m)^[ \t]*#include\s*[<"]direct\.h[>"]\s*\r?\n', ''
+
+          # Add exactly one direct.h include after the include guard.
+          $pattern = '(^#define Zippy_ZIPARCHIVE_HPP\r?\n)'
+          $replacement = '$1#include <direct.h>' + "`r`n"
+
+          if ($content -match $pattern) {
+            $content = $content -replace $pattern, $replacement
+          }
+          else {
+            Write-Error "Could not find the ZipArchive include guard."
+            exit 1
+          }
 
           Set-Content -Path $file -Value $content -NoNewline
 
-          Write-Host "Zippy Windows header patch applied."
+          Write-Host "Zippy patched: exactly one direct.h include."
 
       - name: Patch Abseil for MSVC
         shell: pwsh
