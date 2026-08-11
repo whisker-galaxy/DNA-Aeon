@@ -110,6 +110,61 @@ jobs:
 
           Write-Host "Abseil civil_time max/min declarations patched."
 
+      - name: Patch DNA-Aeon main.cpp for MSVC ARM64
+        shell: pwsh
+        run: |
+          $file = "cpp/src/main.cpp"
+
+          if (-not (Test-Path $file)) {
+            Write-Error "main.cpp not found"
+            exit 1
+          }
+
+          $content = Get-Content $file -Raw
+
+          # Fix the encode ThreadPool construction.
+          $old = 'absl::synchronization_internal::ThreadPool pool(static_cast<int>(min(static_cast<unsigned long>(config["general"]["threads"]),ents.size())));'
+          $new = 'const int threadCount = static_cast<int>(std::min<std::size_t>(static_cast<std::size_t>(config["general"]["threads"]), ents.size()));`r`n    absl::synchronization_internal::ThreadPool pool(threadCount);'
+
+          if ($content.Contains($old)) {
+            $content = $content.Replace($old, $new)
+          }
+          elseif ($content -notmatch 'const int threadCount = static_cast<int>\(std::min<std::size_t>') {
+            Write-Error "Expected encode ThreadPool expression was not found"
+            exit 1
+          }
+
+          # Fix the decode ThreadPool construction.
+          $content = $content.Replace(
+            'absl::synchronization_internal::ThreadPool pool(config["general"]["threads"]);',
+            'absl::synchronization_internal::ThreadPool pool(static_cast<int>(config["general"]["threads"]));'
+          )
+
+          # Explicitly convert JSON file paths to std::string.
+          $content = $content.Replace(
+            'ifstream outin(config["encode"]["output"]);',
+            'ifstream outin(static_cast<string>(config["encode"]["output"]));'
+          )
+
+          $content = $content.Replace(
+            'ofstream confout(config["encode"]["output"]);',
+            'ofstream confout(static_cast<string>(config["encode"]["output"]));'
+          )
+
+          $content = $content.Replace(
+            'ifstream iStream(config["decode"]["input"]);',
+            'ifstream iStream(static_cast<string>(config["decode"]["input"]));'
+          )
+
+          $content = $content.Replace(
+            'ofstream out(config["decode"]["output"], ios::out | ios::binary);',
+            'ofstream out(static_cast<string>(config["decode"]["output"]), ios::out | ios::binary);'
+          )
+
+          Set-Content $file $content -NoNewline
+
+          Write-Host "main.cpp MSVC ARM64 compatibility patch completed."
+
       - name: Configure CMake
         run: |
           cmake -S . -B build -A ARM64
