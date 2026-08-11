@@ -124,41 +124,35 @@ jobs:
 
           # Fix the encode ThreadPool construction.
           $old = 'absl::synchronization_internal::ThreadPool pool(static_cast<int>(min(static_cast<unsigned long>(config["general"]["threads"]),ents.size())));'
-          $new = 'const int threadCount = static_cast<int>(std::min<std::size_t>(static_cast<std::size_t>(config["general"]["threads"]), ents.size()));`r`n    absl::synchronization_internal::ThreadPool pool(threadCount);'
+          $new = 'const int threadCount = static_cast<int>(std::min<std::size_t>(static_cast<std::size_t>(config["general"]["threads"]), ents.size()));' + [Environment]::NewLine + '    absl::synchronization_internal::ThreadPool pool(threadCount);'
 
           if ($content.Contains($old)) {
             $content = $content.Replace($old, $new)
           }
-          elseif ($content -notmatch 'const int threadCount = static_cast<int>\(std::min<std::size_t>') {
-            Write-Error "Expected encode ThreadPool expression was not found"
-            exit 1
-          }
 
-          # Fix the decode ThreadPool construction.
-          $content = $content.Replace(
-            'absl::synchronization_internal::ThreadPool pool(config["general"]["threads"]);',
-            'absl::synchronization_internal::ThreadPool pool(static_cast<int>(config["general"]["threads"]));'
-          )
+          # Remove the literal backtick characters accidentally inserted
+          # by the previous patch, if this workflow has already run once.
+          $content = $content.Replace('`r`n', [Environment]::NewLine)
 
-          # Explicitly convert JSON file paths to std::string.
+          # Fix JSON path arguments for MSVC.
           $content = $content.Replace(
             'ifstream outin(config["encode"]["output"]);',
-            'ifstream outin(static_cast<string>(config["encode"]["output"]));'
+            'ifstream outin(config["encode"]["output"].get<string>());'
           )
 
           $content = $content.Replace(
             'ofstream confout(config["encode"]["output"]);',
-            'ofstream confout(static_cast<string>(config["encode"]["output"]));'
+            'ofstream confout(config["encode"]["output"].get<string>());'
           )
 
           $content = $content.Replace(
             'ifstream iStream(config["decode"]["input"]);',
-            'ifstream iStream(static_cast<string>(config["decode"]["input"]));'
+            'ifstream iStream(config["decode"]["input"].get<string>());'
           )
 
           $content = $content.Replace(
             'ofstream out(config["decode"]["output"], ios::out | ios::binary);',
-            'ofstream out(static_cast<string>(config["decode"]["output"]), ios::out | ios::binary);'
+            'ofstream out(config["decode"]["output"].get<string>(), ios::out | ios::binary);'
           )
 
           Set-Content $file $content -NoNewline
