@@ -53,37 +53,34 @@ jobs:
           $file = "Zippy/library/Zippy/ZipArchive.hpp"
 
           if (-not (Test-Path $file)) {
-            Write-Error "ZipArchive.hpp was not found at $file"
+            Write-Error "ZipArchive.hpp not found"
             exit 1
           }
 
-          $content = Get-Content -Path $file -Raw
+          $content = Get-Content $file -Raw
 
-          # Remove any compatibility patches from previous attempts.
-          $content = $content -replace '(?m)^[ \t]*#include <direct\.h>\r?\n', ''
-          $content = $content -replace '(?m)^[ \t]*#include <sys/stat\.h>\r?\n', ''
-          $content = $content -replace '(?s)\r?\n?#ifdef _WIN32\r?\n#include <direct\.h>\r?\n#else\r?\n#include <sys/stat\.h>\r?\n#endif\r?\n?', "`r`n"
-
-          # Add <filesystem> once.
-          if ($content -notmatch '#include <filesystem>') {
-            $content = $content -replace '(#include <fstream>\r?\n)', '$1#include <filesystem>' + "`r`n"
+          # Add filesystem header.
+          if (-not $content.Contains("#include <filesystem>")) {
+            $content = $content.Replace(
+              "#include <fstream>",
+              "#include <fstream>`r`n#include <filesystem>"
+            )
           }
 
-          # Replace the Windows _mkdir call with standard C++ filesystem.
+          # Replace Zippy's Windows mkdir call.
           $old = '_mkdir((dest + entry.Filename()).c_str());'
           $new = 'std::filesystem::create_directory(dest + entry.Filename());'
 
-          if ($content.Contains($old)) {
-            $content = $content.Replace($old, $new)
-          }
-          elseif ($content -notmatch 'std::filesystem::create_directory\(dest \+ entry\.Filename\(\)\)') {
-            Write-Error "Expected Zippy _mkdir call was not found."
+          if (-not $content.Contains($old)) {
+            Write-Error "Zippy _mkdir call was not found"
             exit 1
           }
 
-          Set-Content -Path $file -Value $content -NoNewline
+          $content = $content.Replace($old, $new)
 
-          Write-Host "Zippy patched to use std::filesystem::create_directory()."
+          Set-Content $file $content -NoNewline
+
+          Write-Host "Zippy patch completed successfully."
 
       
 
