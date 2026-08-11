@@ -83,7 +83,7 @@ jobs:
 
           Set-Content -Path $file -Value $content -NoNewline
 
-          Write-Host "Zippy patched to use std::filesystem::create_directory().""
+          Write-Host "Zippy patched to use std::filesystem::create_directory()."
 
       
 
